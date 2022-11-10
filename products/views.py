@@ -1,8 +1,10 @@
+from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 from .models import Products
 from .serializers import ProductSerializer
-from rest_framework import status
 
 # Create your views here.
 
@@ -24,12 +26,17 @@ def products_list(request):
         return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET"])
+@api_view(["GET", "PUT", "DELETE"])
 def product_detail(request, pk):
-    try:
-        product= Products.objects.get(pk = pk)
+    product = get_object_or_404(Products, pk = pk)
+    if request.method == "GET":
         serializer = ProductSerializer(product)
         return Response(serializer.data, status = status.HTTP_200_OK)
-    except: 
-        product.DoesNotExist
-        return Response(status.HTTP_404_NOT_FOUND)
+    elif request.method == "PUT":
+        serializer = ProductSerializer(product, data = request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    elif request.method == 'DELETE':
+        product.delete()
+        return Response(status = status.HTTP_204_NO_CONTENT)
